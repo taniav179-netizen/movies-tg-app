@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -19,12 +19,10 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 12px; }
 
-    /* Barra de filtros */
     .filters { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
     .filter-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; white-space: nowrap; }
     .filter-btn.active { background: var(--btn); color: var(--btn-text); border-color: transparent; font-weight: 600; }
 
-    /* Tarjetas de película */
     .card { display: flex; background: var(--card-bg); border-radius: 12px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     .poster { width: 95px; min-width: 95px; background: #2a2a2a; background-size: cover; background-position: center; }
     .content { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
@@ -34,7 +32,6 @@
     .meta { font-size: 12px; color: var(--hint); margin-top: 3px; line-height: 1.4; }
     .comment-box { background: rgba(255,255,255,0.06); border-left: 3px solid var(--btn); padding: 6px 8px; border-radius: 4px; font-size: 12px; font-style: italic; color: #ddd; margin-top: 4px; }
 
-    /* Botones y acciones */
     .actions-grid { display: flex; flex-direction: column; gap: 6px; }
     .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
     .btn { border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; cursor: pointer; text-decoration: none; text-align: center; color: #fff; }
@@ -44,7 +41,6 @@
     .btn-status { background: rgba(255,255,255,0.1); }
     .btn-status.active { background: #2e7d32; font-weight: bold; }
     
-    /* Modal de Edición */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
     .modal { background: var(--card-bg); padding: 18px; border-radius: 12px; width: 100%; max-width: 400px; }
     .modal h3 { margin-bottom: 12px; font-size: 16px; }
@@ -60,7 +56,6 @@
 </head>
 <body>
 
-  <!-- Filtros de Estado -->
   <div class="filters">
     <button class="filter-btn active" onclick="setFilter('por_ver')">🍿 Por ver</button>
     <button class="filter-btn" onclick="setFilter('visto')">✅ Visto</button>
@@ -72,7 +67,6 @@
 
   <div id="movie-list">Cargando títulos...</div>
 
-  <!-- Modal para editar película y enlace -->
   <div id="edit-modal" class="modal-overlay">
     <div class="modal">
       <h3>Editar película</h3>
@@ -100,7 +94,7 @@
   <script>
     const SUPABASE_URL = "https://ogsornrclbhzyxcgfljl.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nc29ybnJjbGJoenl4Y2dmbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNzQ0NzIsImV4cCI6MjEwNzY1MDQ3Mn0.6jpX0kkpw_t0j38CJU7fWJhOopn-9Iq3Fwr9EJfTbFo";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentFilter = 'por_ver';
     let currentMovies = [];
@@ -115,7 +109,7 @@
       const container = document.getElementById('movie-list');
       container.innerHTML = '<p style="color:gray; text-align:center;">Cargando...</p>';
 
-      let query = supabase.from('movies').select('*').order('id', { ascending: false });
+      let query = db.from('movies').select('*').order('id', { ascending: false });
 
       if (currentFilter !== 'todos') {
         query = query.eq('status', currentFilter);
@@ -124,7 +118,7 @@
       const { data, error } = await query;
 
       if (error) {
-        container.innerHTML = '<p style="color:#ff6b6b; text-align:center;">Error al cargar. Asegúrate de desactivar RLS en Supabase.</p>';
+        container.innerHTML = '<p style="color:#ff6b6b; text-align:center;">Error al cargar. Revisa los permisos de la base.</p>';
         console.error(error);
         return;
       }
@@ -157,7 +151,6 @@
                   <button class="btn btn-edit" onclick="openEditModal(${m.id})">✏️ Editar</button>
                 </div>
 
-                <!-- Botones rápidos de cambio de estado -->
                 <div class="btn-row">
                   <button class="btn btn-status ${m.status === 'visto' ? 'active' : ''}" onclick="setStatus(${m.id}, 'visto')">✅ Visto</button>
                   <button class="btn btn-status ${m.status === 'vio_tania' ? 'active' : ''}" onclick="setStatus(${m.id}, 'vio_tania')">👩 Tania</button>
@@ -175,7 +168,6 @@
     async function setStatus(id, newStatus) {
       let commentUpdate = undefined;
 
-      // Si se marca como Visto, preguntar si quieren dejar un comentario opcional
       if (newStatus === 'visto') {
         const userComment = prompt("¿Quieres agregar una breve opinión o calificación? (Puedes dejarlo en blanco):");
         if (userComment !== null && userComment.trim() !== "") {
@@ -188,7 +180,7 @@
         updateData.comment = commentUpdate;
       }
 
-      await supabase.from('movies').update(updateData).eq('id', id);
+      await db.from('movies').update(updateData).eq('id', id);
       loadMovies();
     }
 
@@ -222,7 +214,7 @@
       const genre = document.getElementById('edit-genre').value;
       const comment = document.getElementById('edit-comment').value;
 
-      await supabase.from('movies').update({
+      await db.from('movies').update({
         title,
         watch_url: watch_url || null,
         genre: genre || null,
