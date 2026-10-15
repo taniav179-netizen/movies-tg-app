@@ -1,109 +1,170 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Наша Кинотека</title>
+  <title>Videoteca</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: var(--tg-theme-bg-color, #141414);
-      --card-bg: var(--tg-theme-secondary-bg-color, #222222);
+      --bg: var(--tg-theme-bg-color, #121212);
+      --card-bg: var(--tg-theme-secondary-bg-color, #1e1e1e);
       --text: var(--tg-theme-text-color, #ffffff);
-      --hint: var(--tg-theme-hint-color, #999999);
+      --hint: var(--tg-theme-hint-color, #9e9e9e);
       --btn: var(--tg-theme-button-color, #2481cc);
       --btn-text: var(--tg-theme-button-text-color, #ffffff);
+      --border: rgba(255, 255, 255, 0.1);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 14px; }
-    
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 12px; }
+
+    /* Barra de filtros */
     .filters { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-    .filter-btn { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 8px 14px; border-radius: 18px; cursor: pointer; font-size: 13px; white-space: nowrap; }
-    .filter-btn.active { background: var(--btn); color: var(--btn-text); border-color: transparent; }
+    .filter-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+    .filter-btn.active { background: var(--btn); color: var(--btn-text); border-color: transparent; font-weight: 600; }
+
+    /* Tarjetas de película */
+    .card { display: flex; background: var(--card-bg); border-radius: 12px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .poster { width: 95px; min-width: 95px; background: #2a2a2a; background-size: cover; background-position: center; }
+    .content { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
     
-    .card { display: flex; background: var(--card-bg); border-radius: 12px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-    .poster { width: 95px; min-width: 95px; background: #333; background-size: cover; background-position: center; }
-    .content { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .title-row { margin-bottom: 4px; }
     .type-badge { font-size: 10px; background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-right: 4px; }
     .title { font-size: 16px; font-weight: 600; display: inline; }
-    .meta { font-size: 12px; color: var(--hint); margin: 4px 0 10px 0; line-height: 1.4; }
+    .meta { font-size: 12px; color: var(--hint); margin-top: 3px; line-height: 1.4; }
+    .comment-box { background: rgba(255,255,255,0.06); border-left: 3px solid var(--btn); padding: 6px 8px; border-radius: 4px; font-size: 12px; font-style: italic; color: #ddd; margin-top: 4px; }
+
+    /* Botones y acciones */
+    .actions-grid { display: flex; flex-direction: column; gap: 6px; }
+    .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn { border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; cursor: pointer; text-decoration: none; text-align: center; color: #fff; }
     
-    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
-    .btn { border: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none; text-align: center; }
-    .btn-watch { background: #2e7d32; color: #fff; }
-    .btn-reject { background: #c62828; color: #fff; }
-    .btn-reset { background: #555555; color: #fff; }
-    .btn-link { background: #1976d2; color: #fff; }
+    .btn-play { background: #1976d2; }
+    .btn-edit { background: #444; }
+    .btn-status { background: rgba(255,255,255,0.1); }
+    .btn-status.active { background: #2e7d32; font-weight: bold; }
+    
+    /* Modal de Edición */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+    .modal { background: var(--card-bg); padding: 18px; border-radius: 12px; width: 100%; max-width: 400px; }
+    .modal h3 { margin-bottom: 12px; font-size: 16px; }
+    .modal label { display: block; font-size: 12px; color: var(--hint); margin-bottom: 4px; margin-top: 8px; }
+    .modal input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: #111; color: #fff; font-size: 14px; }
+    .modal-buttons { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-buttons button { flex: 1; padding: 9px; border-radius: 6px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-save { background: var(--btn); color: #fff; }
+    .btn-cancel { background: #444; color: #fff; }
+
     #empty-state { text-align: center; color: var(--hint); margin-top: 40px; }
   </style>
 </head>
 <body>
 
-  <!-- Вкладки статусов -->
+  <!-- Filtros de Estado -->
   <div class="filters">
-    <button class="filter-btn active" onclick="setFilter('planned')">🍿 К просмотру</button>
-    <button class="filter-btn" onclick="setFilter('watched')">✅ Посмотрели</button>
-    <button class="filter-btn" onclick="setFilter('rejected')">❌ Не хотим</button>
+    <button class="filter-btn active" onclick="setFilter('por_ver')">🍿 Por ver</button>
+    <button class="filter-btn" onclick="setFilter('visto')">✅ Visto</button>
+    <button class="filter-btn" onclick="setFilter('vio_tania')">👩 Vio Tania</button>
+    <button class="filter-btn" onclick="setFilter('vio_gonza')">👨 Vio Gonza</button>
+    <button class="filter-btn" onclick="setFilter('incompleto')">⏳ Incompleto</button>
+    <button class="filter-btn" onclick="setFilter('todos')">🌐 Todos</button>
   </div>
 
-  <div id="movie-list">Загрузка фильмов...</div>
+  <div id="movie-list">Cargando títulos...</div>
+
+  <!-- Modal para editar película y enlace -->
+  <div id="edit-modal" class="modal-overlay">
+    <div class="modal">
+      <h3>Editar película</h3>
+      <input type="hidden" id="edit-id">
+      
+      <label>Título:</label>
+      <input type="text" id="edit-title">
+      
+      <label>Enlace de visualización (watch_url):</label>
+      <input type="url" id="edit-watch-url" placeholder="https://...">
+
+      <label>Género:</label>
+      <input type="text" id="edit-genre">
+
+      <label>Comentario / Nota:</label>
+      <input type="text" id="edit-comment" placeholder="Opinión o detalle...">
+
+      <div class="modal-buttons">
+        <button class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
+        <button class="btn-save" onclick="saveEdit()">Guardar</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // ВСТАВЬТЕ ВАШИ ДАННЫЕ
     const SUPABASE_URL = "https://ogsornrclbhzyxcgfljl.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nc29ybnJjbGJoenl4Y2dmbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNzQ0NzIsImV4cCI6MjEwNzY1MDQ3Mn0.6jpX0kkpw_t0j38CJU7fWJhOopn-9Iq3Fwr9EJfTbFo";
+    const SUPABASE_ANON_KEY = "СЮДА_ВСТАВЬТЕ_ВАШ_КЛЮЧ_EYJ...";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let currentStatus = 'planned';
+    let currentFilter = 'por_ver';
+    let currentMovies = [];
 
     function formatType(type) {
-      if (type === 'series') return '📺 Сериал';
-      if (type === 'short') return '⏱ Короткий метр';
-      return '🎬 Фильм';
+      if (type === 'series') return '📺 Serie';
+      if (type === 'short') return '⏱ Corto';
+      return '🎬 Película';
     }
 
     async function loadMovies() {
       const container = document.getElementById('movie-list');
-      container.innerHTML = '<p style="color:gray;">Загрузка...</p>';
+      container.innerHTML = '<p style="color:gray; text-align:center;">Cargando...</p>';
 
-      const { data, error } = await supabase
-        .from('movies')
-        .select('*')
-        .eq('status', currentStatus)
-        .order('id', { ascending: false });
+      let query = supabase.from('movies').select('*').order('id', { ascending: false });
+
+      if (currentFilter !== 'todos') {
+        query = query.eq('status', currentFilter);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
-        container.innerHTML = '<p style="color:red;">Ошибка загрузки базы данных.</p>';
+        container.innerHTML = '<p style="color:#ff6b6b; text-align:center;">Error al cargar. Asegúrate de desactivar RLS en Supabase.</p>';
         console.error(error);
         return;
       }
 
-      if (!data || data.length === 0) {
-        container.innerHTML = '<div id="empty-state">В этой категории пока ничего нет</div>';
+      currentMovies = data || [];
+
+      if (currentMovies.length === 0) {
+        container.innerHTML = '<div id="empty-state">No hay títulos en esta sección</div>';
         return;
       }
 
-      container.innerHTML = data.map(m => {
+      container.innerHTML = currentMovies.map(m => {
         const posterBg = m.poster_url ? `style="background-image: url('${m.poster_url}')"` : '';
         return `
           <div class="card">
             <div class="poster" ${posterBg}></div>
             <div class="content">
               <div>
-                <div class="title-row">
+                <div>
                   <span class="type-badge">${formatType(m.type)}</span>
                   <div class="title">${m.title} ${m.year ? `(${m.year})` : ''}</div>
                 </div>
                 <div class="meta">${[m.genre, m.country].filter(Boolean).join(' • ')}</div>
+                ${m.comment ? `<div class="comment-box">💬 ${m.comment}</div>` : ''}
               </div>
 
-              <div class="actions">
-                ${m.watch_url ? `<a href="${m.watch_url}" target="_blank" class="btn btn-link">Смотреть ↗</a>` : ''}
-                ${currentStatus !== 'watched' ? `<button class="btn btn-watch" onclick="updateStatus(${m.id}, 'watched')">Посмотрели</button>` : ''}
-                ${currentStatus !== 'rejected' ? `<button class="btn btn-reject" onclick="updateStatus(${m.id}, 'rejected')">Не хочу</button>` : ''}
-                ${currentStatus !== 'planned' ? `<button class="btn btn-reset" onclick="updateStatus(${m.id}, 'planned')">Вернуть</button>` : ''}
+              <div class="actions-grid">
+                <div class="btn-row">
+                  ${m.watch_url ? `<a href="${m.watch_url}" target="_blank" class="btn btn-play">Ver ↗</a>` : ''}
+                  <button class="btn btn-edit" onclick="openEditModal(${m.id})">✏️ Editar</button>
+                </div>
+
+                <!-- Botones rápidos de cambio de estado -->
+                <div class="btn-row">
+                  <button class="btn btn-status ${m.status === 'visto' ? 'active' : ''}" onclick="setStatus(${m.id}, 'visto')">✅ Visto</button>
+                  <button class="btn btn-status ${m.status === 'vio_tania' ? 'active' : ''}" onclick="setStatus(${m.id}, 'vio_tania')">👩 Tania</button>
+                  <button class="btn btn-status ${m.status === 'vio_gonza' ? 'active' : ''}" onclick="setStatus(${m.id}, 'vio_gonza')">👨 Gonza</button>
+                  <button class="btn btn-status ${m.status === 'incompleto' ? 'active' : ''}" onclick="setStatus(${m.id}, 'incompleto')">⏳ Incompleto</button>
+                  ${m.status !== 'por_ver' ? `<button class="btn btn-status" onclick="setStatus(${m.id}, 'por_ver')">↩️ Por ver</button>` : ''}
+                </div>
               </div>
             </div>
           </div>
@@ -111,16 +172,64 @@
       }).join('');
     }
 
-    async function updateStatus(id, newStatus) {
-      await supabase.from('movies').update({ status: newStatus }).eq('id', id);
+    async function setStatus(id, newStatus) {
+      let commentUpdate = undefined;
+
+      // Si se marca como Visto, preguntar si quieren dejar un comentario opcional
+      if (newStatus === 'visto') {
+        const userComment = prompt("¿Quieres agregar una breve opinión o calificación? (Puedes dejarlo en blanco):");
+        if (userComment !== null && userComment.trim() !== "") {
+          commentUpdate = userComment.trim();
+        }
+      }
+
+      const updateData = { status: newStatus };
+      if (commentUpdate !== undefined) {
+        updateData.comment = commentUpdate;
+      }
+
+      await supabase.from('movies').update(updateData).eq('id', id);
       loadMovies();
     }
 
     function setFilter(status) {
-      currentStatus = status;
+      currentFilter = status;
       document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.innerText.toLowerCase().includes(status === 'planned' ? 'просмотру' : status === 'watched' ? 'посмотрели' : 'не хотим'));
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${status}'`));
       });
+      loadMovies();
+    }
+
+    function openEditModal(id) {
+      const m = currentMovies.find(item => item.id === id);
+      if (!m) return;
+      document.getElementById('edit-id').value = m.id;
+      document.getElementById('edit-title').value = m.title || '';
+      document.getElementById('edit-watch-url').value = m.watch_url || '';
+      document.getElementById('edit-genre').value = m.genre || '';
+      document.getElementById('edit-comment').value = m.comment || '';
+      document.getElementById('edit-modal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').style.display = 'none';
+    }
+
+    async function saveEdit() {
+      const id = document.getElementById('edit-id').value;
+      const title = document.getElementById('edit-title').value;
+      const watch_url = document.getElementById('edit-watch-url').value;
+      const genre = document.getElementById('edit-genre').value;
+      const comment = document.getElementById('edit-comment').value;
+
+      await supabase.from('movies').update({
+        title,
+        watch_url: watch_url || null,
+        genre: genre || null,
+        comment: comment || null
+      }).eq('id', id);
+
+      closeEditModal();
       loadMovies();
     }
 
@@ -128,6 +237,7 @@
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
     }
+
     loadMovies();
   </script>
 </body>
