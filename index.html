@@ -144,7 +144,23 @@
       justify-content: center;
       height: 100%;
       color: var(--text-muted);
-      font-size: 2rem;
+      font-size: 2.2rem;
+    }
+
+    /* Бейдж типа поверх постера */
+    .type-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(4px);
+      color: #f8fafc;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
     }
 
     .movie-info {
@@ -158,7 +174,7 @@
     .movie-title {
       font-size: 0.95rem;
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.25;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -194,7 +210,7 @@
       color: #cbd5e1;
       font-style: italic;
       margin-top: 4px;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.25);
       padding: 4px 6px;
       border-radius: 6px;
       word-break: break-word;
@@ -236,7 +252,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.8);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -257,7 +273,9 @@
       border: 1px solid var(--card-border);
       border-radius: 16px;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
+      max-height: 90vh;
+      overflow-y: auto;
       padding: 20px;
       display: flex;
       flex-direction: column;
@@ -273,6 +291,15 @@
       display: flex;
       flex-direction: column;
       gap: 5px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
     }
 
     .form-group label {
@@ -293,6 +320,31 @@
     .form-group textarea {
       resize: vertical;
       min-height: 60px;
+    }
+
+    .poster-edit-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .poster-preview-box {
+      width: 55px;
+      height: 82px;
+      border-radius: 6px;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .poster-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .modal-footer {
@@ -353,7 +405,7 @@
   </header>
 
   <div class="controls">
-    <input type="text" id="search-bar" class="search-input" placeholder="🔍 Buscar por título, género o país..." oninput="handleSearch()">
+    <input type="text" id="search-bar" class="search-input" placeholder="🔍 Buscar por título, género, tipo o país..." oninput="handleSearch()">
     
     <div class="tabs">
       <button class="tab-btn active" onclick="setFilter('todos', this)">Todos</button>
@@ -370,7 +422,7 @@
   <!-- Модальное окно редактирования и удаления -->
   <div id="edit-modal" class="modal-overlay">
     <div class="modal-card">
-      <div class="modal-header">✏️ Editar película / serie</div>
+      <div class="modal-header">✏️ Editar título</div>
       
       <input type="hidden" id="edit-id">
 
@@ -379,20 +431,40 @@
         <input type="text" id="edit-title" required>
       </div>
 
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="edit-type">
+            <option value="movie">🎬 Película</option>
+            <option value="series">📺 Serie</option>
+            <option value="short">🎞️ Cortometraje</option>
+            <option value="documentary">📽️ Documental</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="edit-status">
+            <option value="por_ver">🍿 Por ver</option>
+            <option value="visto">✅ Visto</option>
+            <option value="vio_tania">👩 Vio Tania</option>
+            <option value="vio_gonza">👨 Vio Gonza</option>
+            <option value="incompleto">⏳ Incompleto</option>
+          </select>
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Género</label>
         <input type="text" id="edit-genre" placeholder="Drama, Terror, Comedia...">
       </div>
 
+      <!-- Редактирование постера с предпросмотром -->
       <div class="form-group">
-        <label>Estado</label>
-        <select id="edit-status">
-          <option value="por_ver">🍿 Por ver</option>
-          <option value="visto">✅ Visto</option>
-          <option value="vio_tania">👩 Vio Tania</option>
-          <option value="vio_gonza">👨 Vio Gonza</option>
-          <option value="incompleto">⏳ Incompleto</option>
-        </select>
+        <label>Póster (URL de la imagen)</label>
+        <div class="poster-edit-row">
+          <div class="poster-preview-box" id="edit-poster-preview">🎬</div>
+          <input type="url" id="edit-poster-url" style="flex: 1;" placeholder="https://image.tmdb.org/..." oninput="updatePosterPreview(this.value)">
+        </div>
       </div>
 
       <div class="form-group">
@@ -422,9 +494,8 @@
       tg.expand();
     }
 
-    // Подключение к Supabase
     const SUPABASE_URL = "https://ogsornrclbhzyxcgfljl.supabase.co";
-    // ВАЖНО: Вставьте сюда ваш настоящий публичный anon-ключ (тот же, что прописан в bot.py)
+    // Вставьте ваш рабочий ключ anon public:
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nc29ybnJjbGJoenl4Y2dmbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNzQ0NzIsImV4cCI6MjEwNzY1MDQ3Mn0.6jpX0kkpw_t0j38CJU7fWJhOopn-9Iq3Fwr9EJfTbFo";
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -439,6 +510,13 @@
       "vio_tania": "👩 Vio Tania",
       "vio_gonza": "👨 Vio Gonza",
       "incompleto": "⏳ Incompleto"
+    };
+
+    const typeLabels = {
+      "movie": "🎬 Película",
+      "series": "📺 Serie",
+      "short": "🎞️ Corto",
+      "documentary": "📽️ Doc"
     };
 
     async function fetchMovies() {
@@ -462,7 +540,7 @@
 
       const filtered = allMovies.filter(movie => {
         const matchesFilter = (currentFilter === 'todos') || (movie.status === currentFilter);
-        const text = `${movie.title || ''} ${movie.genre || ''} ${movie.country || ''}`.toLowerCase();
+        const text = `${movie.title || ''} ${movie.genre || ''} ${movie.country || ''} ${movie.type || ''}`.toLowerCase();
         const matchesSearch = text.includes(searchQuery.toLowerCase());
         return matchesFilter && matchesSearch;
       });
@@ -477,8 +555,13 @@
         card.className = 'movie-card';
 
         const posterHtml = movie.poster_url 
-          ? `<img src="${movie.poster_url}" alt="${movie.title}" loading="lazy">` 
+          ? `<img src="${movie.poster_url}" alt="${movie.title}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\\'poster-placeholder\\\'>🎬</div>';">` 
           : `<div class="poster-placeholder">🎬</div>`;
+
+        // Бейдж типа контента
+        const typeBadgeHtml = movie.type 
+          ? `<div class="type-badge">${typeLabels[movie.type] || movie.type}</div>` 
+          : '';
 
         const watchBtn = movie.watch_url 
           ? `<a href="${movie.watch_url}" target="_blank" class="btn-action btn-watch">▶ Ver</a>` 
@@ -487,7 +570,7 @@
         const stBadge = movie.status ? `<div class="badge badge-${movie.status}">${statusLabels[movie.status] || movie.status}</div>` : '';
         const commentHtml = movie.comment ? `<div class="movie-comment">“${movie.comment}”</div>` : '';
 
-        // Формируем строку метаданных: Год • Жанр • Страна
+        // Год • Жанр • Страна
         const metaParts = [];
         if (movie.year) metaParts.push(movie.year);
         if (movie.genre) metaParts.push(movie.genre);
@@ -497,6 +580,7 @@
         card.innerHTML = `
           <div class="poster-container">
             ${posterHtml}
+            ${typeBadgeHtml}
           </div>
           <div class="movie-info">
             <div class="movie-title">${movie.title}</div>
@@ -527,16 +611,29 @@
       renderMovies();
     }
 
+    function updatePosterPreview(url) {
+      const box = document.getElementById('edit-poster-preview');
+      if (url && url.startsWith('http')) {
+        box.innerHTML = `<img src="${url}" onerror="this.onerror=null; this.parentElement.innerHTML='🎬';">`;
+      } else {
+        box.innerHTML = '🎬';
+      }
+    }
+
     function openEditModal(id) {
       const movie = allMovies.find(m => m.id === id);
       if (!movie) return;
 
       document.getElementById('edit-id').value = movie.id;
       document.getElementById('edit-title').value = movie.title || '';
-      document.getElementById('edit-genre').value = movie.genre || '';
+      document.getElementById('edit-type').value = movie.type || 'movie';
       document.getElementById('edit-status').value = movie.status || 'por_ver';
+      document.getElementById('edit-genre').value = movie.genre || '';
+      document.getElementById('edit-poster-url').value = movie.poster_url || '';
       document.getElementById('edit-watch-url').value = movie.watch_url || '';
       document.getElementById('edit-comment').value = movie.comment || '';
+
+      updatePosterPreview(movie.poster_url);
 
       document.getElementById('edit-modal').classList.add('active');
     }
@@ -548,8 +645,10 @@
     async function saveMovie() {
       const id = document.getElementById('edit-id').value;
       const title = document.getElementById('edit-title').value.trim();
-      const genre = document.getElementById('edit-genre').value.trim() || null;
+      const type = document.getElementById('edit-type').value;
       const status = document.getElementById('edit-status').value;
+      const genre = document.getElementById('edit-genre').value.trim() || null;
+      const poster_url = document.getElementById('edit-poster-url').value.trim() || null;
       const watch_url = document.getElementById('edit-watch-url').value.trim() || null;
       const comment = document.getElementById('edit-comment').value.trim() || null;
 
@@ -561,7 +660,7 @@
       try {
         const { error } = await supabaseClient
           .from('movies')
-          .update({ title, genre, status, watch_url, comment })
+          .update({ title, type, genre, status, poster_url, watch_url, comment })
           .eq('id', id);
 
         if (error) throw error;
@@ -601,3 +700,4 @@
   </script>
 </body>
 </html>
+  
