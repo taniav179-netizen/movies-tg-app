@@ -140,6 +140,10 @@
         <label>Género</label>
         <input type="text" id="edit-genre" placeholder="Drama, Terror, Comedia...">
       </div>
+      <div class="form-group">
+        <label>País (Страна)</label>
+        <input type="text" id="edit-country" placeholder="ES, US, AR, RU...">
+      </div>
 
       <div class="form-group">
         <label>Estado</label>
@@ -210,62 +214,65 @@
       }
     }
 
-    function renderMovies() {
-      const container = document.getElementById('movies-container');
-      container.innerHTML = '';
+function renderMovies() {
+  const container = document.getElementById('movies-container');
+  container.innerHTML = '';
 
-      const filtered = allMovies.filter(movie => {
-        const matchStatus = (currentStatus === 'todos') || (movie.status === currentStatus);
-        const matchType = (currentType === 'all') || (movie.type === currentType);
-        const text = `${movie.title || ''} ${movie.genre || ''} ${movie.country || ''}`.toLowerCase();
-        const matchSearch = text.includes(searchQuery.toLowerCase());
-        return matchStatus && matchType && matchSearch;
-      });
+  const filtered = allMovies.filter(movie => {
+    const matchStatus = (currentStatus === 'todos') || (movie.status === currentStatus);
+    const matchType = (currentType === 'all') || (movie.type === currentType);
+    const text = `${movie.title || ''} ${movie.genre || ''} ${movie.country || ''}`.toLowerCase();
+    const matchSearch = text.includes(searchQuery.toLowerCase());
+    return matchStatus && matchType && matchSearch;
+  });
 
-      if (filtered.length === 0) {
-        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px 0;">No se encontraron títulos.</div>';
-        return;
-      }
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px 0;">No se encontraron títulos.</div>';
+    return;
+  }
 
-      filtered.forEach(movie => {
-        const card = document.createElement('div');
-        card.className = 'movie-card';
+  // === ВСТАВЛЯЕМ ОТСЮДА ===
+  filtered.forEach(movie => {
+    const card = document.createElement('div');
+    card.className = 'movie-card';
 
-        const posterHtml = movie.poster_url 
-          ? `<img src="${movie.poster_url}" alt="${movie.title}" loading="lazy">` 
-          : `<div class="poster-placeholder">🎬</div>`;
+    const posterHtml = movie.poster_url 
+      ? `<img src="${movie.poster_url}" alt="${movie.title}" loading="lazy">` 
+      : `<div class="poster-placeholder">🎬</div>`;
 
-        const watchBtn = movie.watch_url 
-          ? `<a href="${movie.watch_url}" target="_blank" class="btn-action btn-watch">▶ Ver</a>` 
-          : '';
+    const watchBtn = movie.watch_url 
+      ? `<a href="${movie.watch_url}" target="_blank" class="btn-action btn-watch">▶ Ver</a>` 
+      : '';
 
-        const stBadge = movie.status ? `<div class="badge badge-${movie.status}">${statusLabels[movie.status] || movie.status}</div>` : '';
-        const commentHtml = movie.comment ? `<div class="movie-comment">“${movie.comment}”</div>` : '';
+    const stBadge = movie.status ? `<div class="badge badge-${movie.status}">${statusLabels[movie.status] || movie.status}</div>` : '';
+    const commentHtml = movie.comment ? `<div class="movie-comment">“${movie.comment}”</div>` : '';
 
-        const metaParts = [];
-        if (movie.year) metaParts.push(movie.year);
-        if (movie.genre) metaParts.push(movie.genre);
-        const metaString = metaParts.join(' • ') || '—';
+    const metaParts = [];
+    if (movie.year) metaParts.push(movie.year);
+    if (movie.genre) metaParts.push(movie.genre);
+    if (movie.country) metaParts.push(movie.country);
+    const metaString = metaParts.join(' • ') || '—';
 
-        card.innerHTML = `
-          <div class="poster-container">
-            ${posterHtml}
-            <div class="type-tag">${typeIcons[movie.type] || '🎬 Película'}</div>
-          </div>
-          <div class="movie-info">
-            <div class="movie-title">${movie.title}</div>
-            <div class="movie-meta"><span>${metaString}</span></div>
-            ${stBadge}
-            ${commentHtml}
-            <div class="movie-actions">
-              <button class="btn-action btn-edit" onclick="openEditModal(${movie.id})">✏️ Editar</button>
-              ${watchBtn}
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
+    card.innerHTML = `
+      <div class="poster-container">
+        ${posterHtml}
+        <div class="type-tag">${typeIcons[movie.type] || '🎬 Película'}</div>
+      </div>
+      <div class="movie-info">
+        <div class="movie-title">${movie.title}</div>
+        <div class="movie-meta"><span>${metaString}</span></div>
+        ${stBadge}
+        ${commentHtml}
+        <div class="movie-actions">
+          <button class="btn-action btn-edit" onclick="openEditModal(${movie.id})">✏️ Editar</button>
+          ${watchBtn}
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+  // === ДО СЮДА ===
+}
 
     function setStatusFilter(status, btn) {
       currentStatus = status;
@@ -294,6 +301,7 @@
       document.getElementById('edit-title').value = movie.title || '';
       document.getElementById('edit-type').value = movie.type || 'movie';
       document.getElementById('edit-genre').value = movie.genre || '';
+      document.getElementById('edit-country').value = movie.country || '';
       document.getElementById('edit-status').value = movie.status || 'por_ver';
       document.getElementById('edit-poster-url').value = movie.poster_url || '';
       document.getElementById('edit-watch-url').value = movie.watch_url || '';
@@ -311,6 +319,7 @@
       const title = document.getElementById('edit-title').value.trim();
       const type = document.getElementById('edit-type').value;
       const genre = document.getElementById('edit-genre').value.trim() || null;
+      const country = document.getElementById('edit-country').value.trim() || null;
       const status = document.getElementById('edit-status').value;
       const poster_url = document.getElementById('edit-poster-url').value.trim() || null;
       const watch_url = document.getElementById('edit-watch-url').value.trim() || null;
@@ -321,7 +330,7 @@
       try {
         const { error } = await supabaseClient
           .from('movies')
-          .update({ title, type, genre, status, poster_url, watch_url, comment })
+          .update({ title, type, genre, country, status, poster_url, watch_url, comment })
           .eq('id', id);
 
         if (error) throw error;
