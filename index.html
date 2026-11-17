@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Nuestra Videoteca</title>
   
-  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -20,382 +18,68 @@
       --accent: #e50914;
       --accent-hover: #b80710;
       --btn-bg: #334155;
-      --btn-text: #f8fafc;
       --danger: #ef4444;
       --danger-hover: #dc2626;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; padding-bottom: 80px; }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      padding: 16px;
-      padding-bottom: 80px;
-    }
+    header { text-align: center; margin-bottom: 16px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
 
-    header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+    .controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .search-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--card-border); background-color: var(--card-bg); color: var(--text-main); font-size: 0.95rem; outline: none; }
+    .search-input:focus { border-color: var(--accent); }
 
-    header h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
+    .filter-group-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-top: 4px; }
+    .tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
 
-    /* Поиск и фильтры */
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
+    .tab-btn { background-color: var(--btn-bg); color: var(--text-muted); border: none; padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .tab-btn.active { background-color: var(--accent); color: #fff; }
 
-    .search-input {
-      width: 100%;
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--card-border);
-      background-color: var(--card-bg);
-      color: var(--text-main);
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
+    .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .movie-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+    
+    .poster-container { width: 100%; aspect-ratio: 2 / 3; background-color: #0b1120; position: relative; }
+    .poster-container img { width: 100%; height: 100%; object-fit: cover; }
+    .poster-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 2rem; }
 
-    .search-input:focus {
-      border-color: var(--accent);
-    }
+    .type-tag { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; backdrop-filter: blur(4px); }
 
-    .tabs {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: none;
-    }
+    .movie-info { padding: 10px; display: flex; flex-direction: column; flex-grow: 1; gap: 4px; }
+    .movie-title { font-size: 0.9rem; font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .movie-meta { font-size: 0.72rem; color: var(--text-muted); }
 
-    .tabs::-webkit-scrollbar {
-      display: none;
-    }
-
-    .tab-btn {
-      background-color: var(--btn-bg);
-      color: var(--text-muted);
-      border: none;
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-      background-color: var(--accent);
-      color: #fff;
-    }
-
-    /* Сетка карточек */
-    .movies-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 14px;
-    }
-
-    .movie-card {
-      background-color: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-
-    .poster-container {
-      width: 100%;
-      aspect-ratio: 2 / 3;
-      background-color: #0b1120;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .poster-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .poster-placeholder {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--text-muted);
-      font-size: 2.2rem;
-    }
-
-    /* Бейдж типа поверх постера */
-    .type-badge {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(4px);
-      color: #f8fafc;
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 3px 7px;
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-    }
-
-    .movie-info {
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-      gap: 4px;
-    }
-
-    .movie-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      line-height: 1.25;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .movie-meta {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .badge {
-      font-size: 0.7rem;
-      padding: 2px 6px;
-      border-radius: 6px;
-      width: fit-content;
-      margin-top: 4px;
-      font-weight: 600;
-    }
-
+    .badge { font-size: 0.68rem; padding: 2px 6px; border-radius: 6px; width: fit-content; margin-top: 4px; font-weight: 600; }
     .badge-por_ver { background: #3b82f6; color: #fff; }
     .badge-visto { background: #10b981; color: #fff; }
     .badge-vio_tania { background: #ec4899; color: #fff; }
     .badge-vio_gonza { background: #8b5cf6; color: #fff; }
     .badge-incompleto { background: #f59e0b; color: #fff; }
 
-    .movie-comment {
-      font-size: 0.75rem;
-      color: #cbd5e1;
-      font-style: italic;
-      margin-top: 4px;
-      background: rgba(0, 0, 0, 0.25);
-      padding: 4px 6px;
-      border-radius: 6px;
-      word-break: break-word;
-    }
+    .movie-comment { font-size: 0.72rem; color: #cbd5e1; font-style: italic; margin-top: 4px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 4px; word-break: break-word; }
 
-    .movie-actions {
-      display: flex;
-      gap: 6px;
-      margin-top: auto;
-      padding-top: 8px;
-    }
+    .movie-actions { display: flex; gap: 6px; margin-top: auto; padding-top: 8px; }
+    .btn-action { flex: 1; padding: 6px; border-radius: 6px; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; }
+    .btn-edit { background-color: var(--btn-bg); color: var(--text-main); }
+    .btn-watch { background-color: var(--accent); color: white; }
 
-    .btn-action {
-      flex: 1;
-      padding: 6px;
-      border-radius: 6px;
-      border: none;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      text-decoration: none;
-    }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 1000; visibility: hidden; opacity: 0; transition: all 0.2s; }
+    .modal-overlay.active { visibility: visible; opacity: 1; }
+    .modal-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; width: 100%; max-width: 420px; padding: 18px; display: flex; flex-direction: column; gap: 10px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { font-size: 1.1rem; font-weight: 700; }
 
-    .btn-edit {
-      background-color: var(--btn-bg);
-      color: var(--text-main);
-    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 0.78rem; color: var(--text-muted); }
+    .form-group input, .form-group select, .form-group textarea { padding: 9px; border-radius: 8px; border: 1px solid var(--card-border); background: #0f172a; color: #fff; font-size: 0.85rem; outline: none; }
+    .form-group textarea { resize: vertical; min-height: 50px; }
 
-    .btn-watch {
-      background-color: var(--accent);
-      color: white;
-    }
-
-    /* Модальное окно */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 1000;
-      visibility: hidden;
-      opacity: 0;
-      transition: all 0.2s;
-    }
-
-    .modal-overlay.active {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    .modal-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 440px;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .modal-header {
-      font-size: 1.15rem;
-      font-weight: 700;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .form-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .form-row .form-group {
-      flex: 1;
-    }
-
-    .form-group label {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .form-group input, .form-group select, .form-group textarea {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--card-border);
-      background: #0f172a;
-      color: #fff;
-      font-size: 0.9rem;
-      outline: none;
-    }
-
-    .form-group textarea {
-      resize: vertical;
-      min-height: 60px;
-    }
-
-    .poster-edit-row {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .poster-preview-box {
-      width: 55px;
-      height: 82px;
-      border-radius: 6px;
-      background: #0f172a;
-      border: 1px solid var(--card-border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-
-    .poster-preview-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .modal-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 10px;
-      gap: 10px;
-    }
-
-    .btn-delete {
-      background: var(--danger);
-      color: white;
-      border: none;
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .btn-delete:hover {
-      background: var(--danger-hover);
-    }
-
-    .modal-buttons-right {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn-secondary {
-      background: var(--btn-bg);
-      color: white;
-      border: none;
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
+    .modal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px; }
+    .btn-delete { background: var(--danger); color: white; border: none; padding: 9px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .btn-secondary { background: var(--btn-bg); color: white; border: none; padding: 9px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: white; border: none; padding: 9px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -405,25 +89,36 @@
   </header>
 
   <div class="controls">
-    <input type="text" id="search-bar" class="search-input" placeholder="🔍 Buscar por título, género, tipo o país..." oninput="handleSearch()">
+    <input type="text" id="search-bar" class="search-input" placeholder="🔍 Buscar por título, género или страна..." oninput="handleSearch()">
     
-    <div class="tabs">
-      <button class="tab-btn active" onclick="setFilter('todos', this)">Todos</button>
-      <button class="tab-btn" onclick="setFilter('por_ver', this)">🍿 Por ver</button>
-      <button class="tab-btn" onclick="setFilter('visto', this)">✅ Visto</button>
-      <button class="tab-btn" onclick="setFilter('vio_tania', this)">👩 Vio Tania</button>
-      <button class="tab-btn" onclick="setFilter('vio_gonza', this)">👨 Vio Gonza</button>
-      <button class="tab-btn" onclick="setFilter('incompleto', this)">⏳ Incompleto</button>
+    <!-- Фильтр по типам -->
+    <div class="filter-group-label">Tipo</div>
+    <div class="tabs" id="type-tabs">
+      <button class="tab-btn active" onclick="setTypeFilter('all', this)">Все варианты</button>
+      <button class="tab-btn" onclick="setTypeFilter('movie', this)">🎬 Película</button>
+      <button class="tab-btn" onclick="setTypeFilter('series', this)">📺 Serie</button>
+      <button class="tab-btn" onclick="setTypeFilter('short', this)">🎞️ Corto</button>
+      <button class="tab-btn" onclick="setTypeFilter('doc', this)">📽️ Doc</button>
+    </div>
+
+    <!-- Фильтр по статусам -->
+    <div class="filter-group-label">Estado</div>
+    <div class="tabs" id="status-tabs">
+      <button class="tab-btn active" onclick="setStatusFilter('todos', this)">Todos</button>
+      <button class="tab-btn" onclick="setStatusFilter('por_ver', this)">🍿 Por ver</button>
+      <button class="tab-btn" onclick="setStatusFilter('visto', this)">✅ Visto</button>
+      <button class="tab-btn" onclick="setStatusFilter('vio_tania', this)">👩 Tania</button>
+      <button class="tab-btn" onclick="setStatusFilter('vio_gonza', this)">👨 Gonza</button>
+      <button class="tab-btn" onclick="setStatusFilter('incompleto', this)">⏳ Incompleto</button>
     </div>
   </div>
 
   <div id="movies-container" class="movies-grid"></div>
 
-  <!-- Модальное окно редактирования и удаления -->
+  <!-- Модальное окно редактирования -->
   <div id="edit-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">✏️ Editar título</div>
-      
       <input type="hidden" id="edit-id">
 
       <div class="form-group">
@@ -431,26 +126,14 @@
         <input type="text" id="edit-title" required>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Tipo</label>
-          <select id="edit-type">
-            <option value="movie">🎬 Película</option>
-            <option value="series">📺 Serie</option>
-            <option value="short">🎞️ Cortometraje</option>
-            <option value="documentary">📽️ Documental</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Estado</label>
-          <select id="edit-status">
-            <option value="por_ver">🍿 Por ver</option>
-            <option value="visto">✅ Visto</option>
-            <option value="vio_tania">👩 Vio Tania</option>
-            <option value="vio_gonza">👨 Vio Gonza</option>
-            <option value="incompleto">⏳ Incompleto</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>Tipo (Категория)</label>
+        <select id="edit-type">
+          <option value="movie">🎬 Película</option>
+          <option value="series">📺 Serie</option>
+          <option value="short">🎞️ Cortometraje</option>
+          <option value="doc">📽️ Documental</option>
+        </select>
       </div>
 
       <div class="form-group">
@@ -458,13 +141,20 @@
         <input type="text" id="edit-genre" placeholder="Drama, Terror, Comedia...">
       </div>
 
-      <!-- Редактирование постера с предпросмотром -->
       <div class="form-group">
-        <label>Póster (URL de la imagen)</label>
-        <div class="poster-edit-row">
-          <div class="poster-preview-box" id="edit-poster-preview">🎬</div>
-          <input type="url" id="edit-poster-url" style="flex: 1;" placeholder="https://image.tmdb.org/..." oninput="updatePosterPreview(this.value)">
-        </div>
+        <label>Estado</label>
+        <select id="edit-status">
+          <option value="por_ver">🍿 Por ver</option>
+          <option value="visto">✅ Visto</option>
+          <option value="vio_tania">👩 Vio Tania</option>
+          <option value="vio_gonza">👨 Vio Gonza</option>
+          <option value="incompleto">⏳ Incompleto</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Póster URL (Ссылка на постер)</label>
+        <input type="url" id="edit-poster-url" placeholder="https://...">
       </div>
 
       <div class="form-group">
@@ -474,12 +164,12 @@
 
       <div class="form-group">
         <label>Comentario / Nota</label>
-        <textarea id="edit-comment" placeholder="¿Qué les pareció o notas importantes?"></textarea>
+        <textarea id="edit-comment"></textarea>
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-delete" onclick="deleteCurrentMovie()">🗑️ Eliminar</button>
-        <div class="modal-buttons-right">
+        <button type="button" class="btn-delete" onclick="deleteCurrentMovie()">🗑️</button>
+        <div style="display:flex; gap:8px;">
           <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
           <button type="button" class="btn-primary" onclick="saveMovie()">Guardar</button>
         </div>
@@ -489,48 +179,34 @@
 
   <script>
     const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
+    if (tg) { tg.ready(); tg.expand(); }
 
     const SUPABASE_URL = "https://ogsornrclbhzyxcgfljl.supabase.co";
-    // Вставьте ваш рабочий ключ anon public:
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nc29ybnJjbGJoenl4Y2dmbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNzQ0NzIsImV4cCI6MjEwNzY1MDQ3Mn0.6jpX0kkpw_t0j38CJU7fWJhOopn-9Iq3Fwr9EJfTbFo";
-
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allMovies = [];
-    let currentFilter = 'todos';
+    let currentStatus = 'todos';
+    let currentType = 'all';
     let searchQuery = '';
 
     const statusLabels = {
-      "por_ver": "🍿 Por ver",
-      "visto": "✅ Visto",
-      "vio_tania": "👩 Vio Tania",
-      "vio_gonza": "👨 Vio Gonza",
-      "incompleto": "⏳ Incompleto"
+      "por_ver": "🍿 Por ver", "visto": "✅ Visto",
+      "vio_tania": "👩 Tania", "vio_gonza": "👨 Gonza", "incompleto": "⏳ Incompleto"
     };
 
-    const typeLabels = {
-      "movie": "🎬 Película",
-      "series": "📺 Serie",
-      "short": "🎞️ Corto",
-      "documentary": "📽️ Doc"
+    const typeIcons = {
+      "series": "📺 Serie", "short": "🎞️ Corto", "doc": "📽️ Doc", "movie": "🎬 Película"
     };
 
     async function fetchMovies() {
       try {
-        const { data, error } = await supabaseClient
-          .from('movies')
-          .select('*')
-          .order('id', { ascending: false });
-
+        const { data, error } = await supabaseClient.from('movies').select('*').order('id', { ascending: false });
         if (error) throw error;
         allMovies = data || [];
         renderMovies();
       } catch (err) {
-        console.error("Error al cargar películas:", err);
+        console.error("Error al cargar:", err);
       }
     }
 
@@ -539,10 +215,11 @@
       container.innerHTML = '';
 
       const filtered = allMovies.filter(movie => {
-        const matchesFilter = (currentFilter === 'todos') || (movie.status === currentFilter);
-        const text = `${movie.title || ''} ${movie.genre || ''} ${movie.country || ''} ${movie.type || ''}`.toLowerCase();
-        const matchesSearch = text.includes(searchQuery.toLowerCase());
-        return matchesFilter && matchesSearch;
+        const matchStatus = (currentStatus === 'todos') || (movie.status === currentStatus);
+        const matchType = (currentType === 'all') || (movie.type === currentType);
+        const text = `${movie.title || ''} ${movie.genre || ''} ${movie.country || ''}`.toLowerCase();
+        const matchSearch = text.includes(searchQuery.toLowerCase());
+        return matchStatus && matchType && matchSearch;
       });
 
       if (filtered.length === 0) {
@@ -555,13 +232,8 @@
         card.className = 'movie-card';
 
         const posterHtml = movie.poster_url 
-          ? `<img src="${movie.poster_url}" alt="${movie.title}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\\'poster-placeholder\\\'>🎬</div>';">` 
+          ? `<img src="${movie.poster_url}" alt="${movie.title}" loading="lazy">` 
           : `<div class="poster-placeholder">🎬</div>`;
-
-        // Бейдж типа контента
-        const typeBadgeHtml = movie.type 
-          ? `<div class="type-badge">${typeLabels[movie.type] || movie.type}</div>` 
-          : '';
 
         const watchBtn = movie.watch_url 
           ? `<a href="${movie.watch_url}" target="_blank" class="btn-action btn-watch">▶ Ver</a>` 
@@ -570,23 +242,19 @@
         const stBadge = movie.status ? `<div class="badge badge-${movie.status}">${statusLabels[movie.status] || movie.status}</div>` : '';
         const commentHtml = movie.comment ? `<div class="movie-comment">“${movie.comment}”</div>` : '';
 
-        // Год • Жанр • Страна
         const metaParts = [];
         if (movie.year) metaParts.push(movie.year);
         if (movie.genre) metaParts.push(movie.genre);
-        if (movie.country) metaParts.push(movie.country);
         const metaString = metaParts.join(' • ') || '—';
 
         card.innerHTML = `
           <div class="poster-container">
             ${posterHtml}
-            ${typeBadgeHtml}
+            <div class="type-tag">${typeIcons[movie.type] || '🎬 Película'}</div>
           </div>
           <div class="movie-info">
             <div class="movie-title">${movie.title}</div>
-            <div class="movie-meta">
-              <span>${metaString}</span>
-            </div>
+            <div class="movie-meta"><span>${metaString}</span></div>
             ${stBadge}
             ${commentHtml}
             <div class="movie-actions">
@@ -599,9 +267,16 @@
       });
     }
 
-    function setFilter(status, btn) {
-      currentFilter = status;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    function setStatusFilter(status, btn) {
+      currentStatus = status;
+      document.querySelectorAll('#status-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderMovies();
+    }
+
+    function setTypeFilter(type, btn) {
+      currentType = type;
+      document.querySelectorAll('#type-tabs .tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderMovies();
     }
@@ -611,15 +286,6 @@
       renderMovies();
     }
 
-    function updatePosterPreview(url) {
-      const box = document.getElementById('edit-poster-preview');
-      if (url && url.startsWith('http')) {
-        box.innerHTML = `<img src="${url}" onerror="this.onerror=null; this.parentElement.innerHTML='🎬';">`;
-      } else {
-        box.innerHTML = '🎬';
-      }
-    }
-
     function openEditModal(id) {
       const movie = allMovies.find(m => m.id === id);
       if (!movie) return;
@@ -627,13 +293,11 @@
       document.getElementById('edit-id').value = movie.id;
       document.getElementById('edit-title').value = movie.title || '';
       document.getElementById('edit-type').value = movie.type || 'movie';
-      document.getElementById('edit-status').value = movie.status || 'por_ver';
       document.getElementById('edit-genre').value = movie.genre || '';
+      document.getElementById('edit-status').value = movie.status || 'por_ver';
       document.getElementById('edit-poster-url').value = movie.poster_url || '';
       document.getElementById('edit-watch-url').value = movie.watch_url || '';
       document.getElementById('edit-comment').value = movie.comment || '';
-
-      updatePosterPreview(movie.poster_url);
 
       document.getElementById('edit-modal').classList.add('active');
     }
@@ -646,16 +310,13 @@
       const id = document.getElementById('edit-id').value;
       const title = document.getElementById('edit-title').value.trim();
       const type = document.getElementById('edit-type').value;
-      const status = document.getElementById('edit-status').value;
       const genre = document.getElementById('edit-genre').value.trim() || null;
+      const status = document.getElementById('edit-status').value;
       const poster_url = document.getElementById('edit-poster-url').value.trim() || null;
       const watch_url = document.getElementById('edit-watch-url').value.trim() || null;
       const comment = document.getElementById('edit-comment').value.trim() || null;
 
-      if (!title) {
-        alert("El título no puede estar vacío.");
-        return;
-      }
+      if (!title) { alert("El título no puede estar vacío."); return; }
 
       try {
         const { error } = await supabaseClient
@@ -675,24 +336,15 @@
 
     async function deleteCurrentMovie() {
       const id = document.getElementById('edit-id').value;
-      if (!id) return;
-
-      const confirmed = confirm("¿Estás seguro de que quieres eliminar este título de la videoteca?");
-      if (!confirmed) return;
+      if (!id || !confirm("¿Eliminar este título?")) return;
 
       try {
-        const { error } = await supabaseClient
-          .from('movies')
-          .delete()
-          .eq('id', id);
-
+        const { error } = await supabaseClient.from('movies').delete().eq('id', id);
         if (error) throw error;
-
         closeModal();
         fetchMovies();
       } catch (err) {
-        console.error("Error al eliminar:", err);
-        alert("Error al eliminar el título. Verifica los permisos en Supabase (RLS Delete).");
+        alert("Error al eliminar.");
       }
     }
 
@@ -700,4 +352,3 @@
   </script>
 </body>
 </html>
-  
